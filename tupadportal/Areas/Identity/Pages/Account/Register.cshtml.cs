@@ -215,67 +215,79 @@ new SelectListItem { Value = "Malinaw Norte", Text = "Malinaw Norte" }
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+{
+    ReturnUrl = returnUrl;
+    InitializeBarangays();
+    ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+    Input.Municipality = "San Pablo City";
+
+    if (ModelState.IsValid)
+    {
+        try
         {
-            ReturnUrl = returnUrl;
-            InitializeBarangays();
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-            Input.Municipality = "San Pablo City"; // Ensure Municipality is set
+            var user = CreateUser();
+            user.FirstName = Input.FirstName;
+            user.LastName = Input.LastName;
+            user.Phone = Input.Phone;
+            user.Position = Input.Position;
+            user.CreatedAt = DateTime.UtcNow;
+            user.Active = false;
+            user.AddressId = await GetOrCreateAddressIdAsync(Input.Barangay, Input.Municipality);
 
-            if (ModelState.IsValid)
+            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+            var result = await _userManager.CreateAsync(user, Input.Password);
+
+            if (result.Succeeded)
             {
-                var user = CreateUser();
-                user.FirstName = Input.FirstName;
-                user.LastName = Input.LastName;
-                user.Phone = Input.Phone;
-                user.Position = Input.Position;
-                user.CreatedAt = DateTime.UtcNow;
-                user.Active = false;
-                user.AddressId = await GetOrCreateAddressIdAsync(Input.Barangay, Input.Municipality);
+                await _userManager.AddToRoleAsync(user, "brgy");
+                _logger.LogInformation("User created a new account with password.");
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
+                var userId = await _userManager.GetUserIdAsync(user);
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-                if (result.Succeeded)
+                var callbackUrl = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new { area = "Identity", userId = userId, code = code },
+                    protocol: Request.Scheme);
+
+                var response = await _fluentEmail
+                    .To(Input.Email)
+                    .Subject("Confirm your email")
+                    .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Views/Emails/EmailConfirmation.cshtml",
+                        new { Name = Input.FirstName, ConfirmationLink = callbackUrl })
+                    .SendAsync();
+
+                if (response.Successful)
                 {
-                    await _userManager.AddToRoleAsync(user, "brgy");
-                    _logger.LogInformation("User created a new account with password.");
-
-                    var userId = await _userManager.GetUserIdAsync(user); // Get the user ID
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user); // Generate the confirmation token
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code)); // Encode the token in Base64
-
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code }, // Pass the userId and the token in the link
-                        protocol: Request.Scheme);
-
-                    var response = await _fluentEmail
-                        .To(Input.Email)
-                        .Subject("Confirm your email")
-                        .UsingTemplateFromFile($"{Directory.GetCurrentDirectory()}/Views/Emails/EmailConfirmation.cshtml",
-                            new { Name = Input.FirstName, ConfirmationLink = callbackUrl })
-                        .SendAsync();
-
-                    if (response.Successful)
-                    {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email });
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Error sending confirmation email.");
-                    }
+                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email });
                 }
-
+                else
+                {
+                    _logger.LogError("Error sending confirmation email: {Errors}", string.Join(", ", response.ErrorMessages));
+                    ModelState.AddModelError(string.Empty, "Error sending confirmation email.");
+                }
+            }
+            else
+            {
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
-
-            return Page();
         }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error during registration: {Message}", ex.Message);
+            ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later.");
+        }
+    }
+
+    return Page();
+}
+
 
 
         private async Task<int> GetOrCreateAddressIdAsync(string barangay, string municipality)
