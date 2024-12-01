@@ -13,13 +13,13 @@
     <div class="col-md-12 mx-auto rounded border p-5 shadow glass-effect">
         <h2 class="text-decoration-underline d-flex justify-content-between align-items-center">
             Applicants List
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
 
                 <!-- Search Bar -->
-                <input class="form-control form-control-sm me-2 w-75" type="search" id="searchApplicant" placeholder="Search Applicants" aria-label="Search">
+                <input class="form-control form-control-sm flex-grow-1 flex-md-grow-0" type="search" id="searchApplicant" placeholder="Search Applicants" aria-label="Search">
 
                 <!-- Barangay Filter -->
-                <select class="form-select w-auto form-control-sm" id="barangayFilter">
+                <select class="form-select w-auto form-control-sm">
                     <option value="">All Barangays</option>
                     @foreach (var barangay in Model.Select(a => a.Barangay).Distinct())
                     {
@@ -28,7 +28,7 @@
                 </select>
 
                 <!-- Batch Filter -->
-                <select class="form-select w-auto form-control-sm" id="batchFilter">
+                <select class="form-select w-auto form-control-sm">
                     <option value="">All Batches</option>
                     @foreach (var batch in Model.Select(a => a.BatchId).Distinct())
                     {
