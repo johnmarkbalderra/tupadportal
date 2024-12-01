@@ -85,7 +85,8 @@
 
 <div class="container my-3">
     <div class="row">
-        <div class="col-md-6 text-center">
+        <!-- Hide this column on devices smaller than 425px -->
+        <div class="col-md-6 text-center d-none d-sm-block d-md-block d-lg-block">
             <img src="~/img/tupad.jpg" alt="Tupad Logo" class="img-fluid" style="max-width: 80%; height: auto;">
         </div>
 
@@ -140,6 +141,7 @@
         </div>
     </div>
 </div>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
