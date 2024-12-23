@@ -1,0 +1,102 @@
+﻿@model tupadportal.ViewModels.ApplicantAttendanceViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            border: 2px solid black;
+            padding: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        p {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Styling for name and address */
+        .info-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+            .info-section p {
+                font-size: 16px;
+                margin: 5px 0;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Name and Address Section -->
+        <div class="info-section">
+            <p><strong>Name:</strong> @Model.FirstName @Model.LastName</p>
+            <p><strong>Address:</strong> @Model.Barangay</p>
+        </div>
+
+        @* <h3>Attendance Report for @Model.FirstName @Model.LastName</h3> *@
+        @* <p>Barangay: @Model.Barangay</p> *@
+
+        <!-- Attendance Table -->
+        @if (Model.Attendances.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time In (AM)</th>
+                        <th>Time Out (AM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var attendance in Model.Attendances)
+                    {
+                        <tr>
+                            <td>@attendance.Date.ToString("MMMM dd, yyyy")</td>
+                            <td>@(attendance.TimeInAM.HasValue ? attendance.TimeInAM.Value.ToString("hh:mm tt") : "N/A")</td>
+                            <td>@(attendance.TimeOutAM.HasValue ? attendance.TimeOutAM.Value.ToString("hh:mm tt") : "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No attendance records found for this applicant.</p>
+        }
+    </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+﻿@model IEnumerable<tupadportal.Models.Address>
+
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-secondary">
+            <tr>
+                <th>No.</th>
+                <th>Barangay</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var counter = 1; // Initialize the counter
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@counter</td> <!-- Use the counter here -->
+                    <td>@item.Barangay</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal" data-id="@item.Add_Id">View Slots</button>
+                    </td>
+                </tr>
+                counter++; // Increment the counter after each row
+            }
+        </tbody>
+    </table>
+</div>

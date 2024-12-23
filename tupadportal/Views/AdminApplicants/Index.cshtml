@@ -1,0 +1,316 @@
+﻿@model IEnumerable<tupadportal.Models.Applicants>
+
+@{
+    ViewData["Title"] = "Index";
+    string sortOrder = ViewData["SortOrder"]?.ToString() ?? "asc";
+    string sortColumn = ViewData["SortColumn"]?.ToString() ?? "LastName";
+}
+<style>
+    .uniform-button {
+        height: 40px; /* Adjust the height as needed */
+        width: 100px; /* Adjust the width as needed */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+<!-- Include Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<div class="row my-5">
+    <div class="col-md-10 mx-auto rounded border p-5 shadow glass-effect">
+        <h2 class="text-decoration-underline d-flex justify-content-between align-items-center">
+            
+            Applicants List
+            <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+
+                <!-- Search Bar -->
+                <input class="form-control form-control-sm flex-grow-1 flex-md-grow-0" type="search" id="searchApplicant" placeholder="Search Applicants" aria-label="Search">
+
+                <!-- Barangay Filter -->
+                <select id="barangayFilter" class="form-select w-auto form-control-sm">
+                    <option value="">All Barangays</option>
+                    @foreach (var barangay in Model.Select(a => a.Barangay).Distinct())
+                    {
+                        <option value="@barangay">@barangay</option>
+                    }
+                </select>
+
+                <!-- Batch Filter -->
+                <select id="batchFilter" class="form-select w-auto form-control-sm">
+                    <option value="">All Batches</option>
+                    @foreach (var batch in Model.Select(a => a.BatchId).Distinct())
+                    {
+                        <option value="@batch">Batch @batch</option>
+                    }
+                </select>
+                <a class="btn btn-outline-info" asp-action="List">By OSEC</a>
+            </div>
+        </h2>
+
+        <hr />
+
+        <!-- Applicants List Container -->
+        <div id="applicantList">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>No.</th>
+                            <th>Last Name</th>
+                            <th>First Name</th>
+                            <th>Barangay</th>
+                            <th>Approved</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var counter = 1; // Initialize the counter
+                        }
+                        @foreach (var applicant in Model)
+                        {
+                            <tr>
+                                <td>@counter</td>
+                                <td>@applicant.LastName</td>
+                                <td>@applicant.FirstName</td>
+                                <td>@applicant.Barangay</td>
+                                <td>
+                                    @if (applicant.Approved)
+                                    {
+                                        <span class="badge bg-success">Yes</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">No</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-secondary btn-sm uniform-button" data-bs-toggle="modal" data-bs-target="#detailsModal-@applicant.ApplicantId">
+                                            <i class="bi bi-eye"></i> Details
+                                        </button>
+
+                                        @if (!applicant.Approved)
+                                        {
+                                            <button type="button" class="btn btn-success btn-sm uniform-button" data-bs-toggle="modal" data-bs-target="#approveModal-@applicant.ApplicantId">
+                                                <i class="bi bi-check-circle"></i> Approve
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="Disapprove" asp-route-id="@applicant.ApplicantId" class="d-inline">
+                                                <button type="submit" class="btn btn-warning btn-sm uniform-button">
+                                                    <i class="bi bi-x-circle"></i> Disapprove
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                            counter++; // Increment the counter after each row
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Approve Modal -->
+@foreach (var applicant in Model)
+{
+    <div class="modal fade" id="approveModal-@applicant.ApplicantId" tabindex="-1" aria-labelledby="approveModalLabel-@applicant.ApplicantId" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel-@applicant.ApplicantId">Set Start Date</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-action="Approve" asp-route-id="@applicant.ApplicantId" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="startDate-@applicant.ApplicantId" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate-@applicant.ApplicantId" name="startDate" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Approve</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+
+@foreach (var item in Model)
+{
+    <div class="modal fade" id="detailsModal-@item.ApplicantId" tabindex="-1" aria-labelledby="detailsModalLabel-@item.ApplicantId" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-info">
+                    <h5 class="modal-title" id="detailsModalLabel-@item.ApplicantId">Applicant Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">First Name</dt>
+                        <dd class="col-sm-7">@item.FirstName</dd>
+
+                        <dt class="col-sm-5">Middle Name</dt>
+                        <dd class="col-sm-7">@item.MiddleName</dd>
+
+                        <dt class="col-sm-5">Last Name</dt>
+                        <dd class="col-sm-7">@item.LastName</dd>
+
+                        <dt class="col-sm-5">Extension Name</dt>
+                        <dd class="col-sm-7">@item.ExtensionName</dd>
+
+                        <dt class="col-sm-5">Birthdate</dt>
+                        <dd class="col-sm-7">@item.Birthdate.ToString("MM/dd/yyyy")</dd>
+
+                        <dt class="col-sm-5">Barangay</dt>
+                        <dd class="col-sm-7">@item.Barangay</dd>
+
+                        <dt class="col-sm-5">Municipality</dt>
+                        <dd class="col-sm-7">@item.Municipality</dd>
+
+                        <dt class="col-sm-5">ID Type</dt>
+                        <dd class="col-sm-7">@item.IdType</dd>
+
+                        <dt class="col-sm-5">ID Number</dt>
+                        <dd class="col-sm-7">@item.IdNumber</dd>
+
+                        <dt class="col-sm-5">Contact No</dt>
+                        <dd class="col-sm-7">@item.ContactNo</dd>
+
+                        <dt class="col-sm-5">Bank Account Type</dt>
+                        <dd class="col-sm-7">@item.BankAccountType</dd>
+
+                        <dt class="col-sm-5">Bank Account No</dt>
+                        <dd class="col-sm-7">@item.BankAccountNo</dd>
+
+                        <dt class="col-sm-5">Beneficiary Type</dt>
+                        <dd class="col-sm-7">@item.BeneficiaryType</dd>
+
+                        <dt class="col-sm-5">Occupation</dt>
+                        <dd class="col-sm-7">@item.Occupation</dd>
+
+                        <dt class="col-sm-5">Sex</dt>
+                        <dd class="col-sm-7">@item.Sex</dd>
+
+                        <dt class="col-sm-5">Civil Status</dt>
+                        <dd class="col-sm-7">@item.CivilStatus</dd>
+
+                        <dt class="col-sm-5">Approved</dt>
+                        <dd class="col-sm-7">
+                            @if (item.Approved)
+                            {
+                                <span class="badge bg-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">No</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-door-closed"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+<!-- SweetAlert2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+@section Scripts {
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: '@TempData["SuccessMessage"]'
+                });
+            });
+        </script>
+    }
+
+    <script>
+                document.addEventListener("DOMContentLoaded", function () {
+            const barangayFilter = document.getElementById("barangayFilter");
+            const batchFilter = document.getElementById("batchFilter");
+
+            const loadApplicants = () => {
+                const barangay = barangayFilter.value;
+                const batchId = batchFilter.value;
+
+                fetch(`/YourController/GetFilteredApplicants?barangay=${encodeURIComponent(barangay)}&batchId=${batchId}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById("applicantList").innerHTML = html;
+                    })
+                    .catch(error => console.error("Error loading applicants:", error));
+            };
+
+            barangayFilter.addEventListener("change", loadApplicants);
+            batchFilter.addEventListener("change", loadApplicants);
+        });
+
+
+                function filterApplicants() {
+            let searchQuery = document.getElementById('searchApplicant').value;
+            let barangay = document.getElementById('barangayFilter').value;
+
+            // Fetch relevant batches for the selected Barangay
+            fetch(`/AdminApplicants/GetBatches?barangay=${encodeURIComponent(barangay)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Error fetching batches.");
+                    }
+                    return response.json(); // Expect JSON response with batch options
+                })
+                .then(batches => {
+                    const batchFilter = document.getElementById('batchFilter');
+                    batchFilter.innerHTML = `<option value="">All Batches</option>`; // Reset batch options
+                    batches.forEach(batch => {
+                        batchFilter.innerHTML += `<option value="${batch.batchId}">Batch ${batch.batchName}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Fetch applicants list with filters
+            fetch(`/AdminApplicants/Search?searchQuery=${encodeURIComponent(searchQuery)}&barangay=${encodeURIComponent(barangay)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Error fetching search results.");
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    document.getElementById('applicantList').innerHTML = data;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Attach event listeners
+        document.getElementById('searchApplicant').addEventListener('keyup', filterApplicants);
+        document.getElementById('barangayFilter').addEventListener('change', filterApplicants);
+        document.getElementById('batchFilter').addEventListener('change', filterApplicants);
+
+    </script>
+}
