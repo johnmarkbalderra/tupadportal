@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
@@ -181,6 +181,22 @@ namespace tupadportal.Controllers
                     return NotFound("Applicant not found.");
                 }
 
+                var checklist = await _context.AttendanceChecklists
+                    .FirstOrDefaultAsync(c => c.ApplicantId == applicantId);
+
+                if (checklist == null)
+                {
+                    _logger.LogWarning("Checklist not found for applicantId={applicantId}", applicantId);
+                    return NotFound("Attendance checklist not found.");
+                }
+
+                // Check if the StartDate matches the current date
+                if (checklist.StartDate.Date != DateTime.Now.Date)
+                {
+                    _logger.LogWarning("Checklist StartDate does not match the current date. No update will be performed.");
+                    return BadRequest("Attendance can only be marked on the checklist's start date.");
+                }
+
                 var attendance = await _context.Attendances
                     .FirstOrDefaultAsync(a => a.ApplicantId == applicantId && a.Date == date);
 
@@ -225,35 +241,52 @@ namespace tupadportal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Attendance for QR code message: {qrCodeMessage}", qrCodeMessageModel.qrCodeMessage);
+                _logger.LogError(ex, "Error marking attendance for QR code message: {qrCodeMessage}", qrCodeMessageModel.qrCodeMessage);
                 return StatusCode(500, "Internal server error. Please try again later.");
             }
         }
 
+
         private async Task UpdateAttendanceChecklist(int applicantId, DateTime date)
         {
-            var checklist = await _context.AttendanceChecklists
-                .FirstOrDefaultAsync(c => c.ApplicantId == applicantId);
-            if (checklist == null) return;
+            // Get the current date
+            var currentDate = DateTime.Now.Date;
 
+            // Find the attendance checklist for the given applicant
+            var checklist = await _context.AttendanceChecklists
+                .FirstOrDefaultAsync(c => c.ApplicantId == applicantId && c.StartDate.Date == currentDate);
+
+            if (checklist == null)
+            {
+                // If no checklist exists or the start date does not match the current date, return early
+                return;
+            }
+
+            // Calculate the index for the day within the checklist range
             int dayIndex = (date - checklist.StartDate).Days;
-            if (dayIndex >= 0 && dayIndex < 10)
+
+            // Ensure the index is within valid range
+            if (dayIndex >= 0 && dayIndex < checklist.DaysChecked.Count)
             {
                 var attendance = await _context.Attendances
                     .FirstOrDefaultAsync(a => a.ApplicantId == applicantId && a.Date.Date == date.Date);
 
+                // Check if the attendance record exists and has both TimeInAM and TimeOutAM set
                 if (attendance != null &&
                     attendance.TimeInAM.HasValue &&
                     attendance.TimeOutAM.HasValue)
                 {
+                    // Update the DaysChecked list to mark the day as checked
                     var daysChecked = checklist.DaysChecked;
                     daysChecked[dayIndex] = true;
                     checklist.DaysChecked = daysChecked;
+
+                    // Save changes to the database
+                    await _context.SaveChangesAsync();
                 }
             }
-
-            await _context.SaveChangesAsync();
         }
+
 
         [HttpPost("SaveSignature")]
         public async Task<IActionResult> SaveSignature([FromBody] SignatureModel model)
