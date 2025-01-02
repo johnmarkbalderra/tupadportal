@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace tupadportal.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "admin")]
     public class BatchessController : Controller
     {
         private readonly ApplicationDbContext _context;
