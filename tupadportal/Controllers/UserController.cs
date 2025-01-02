@@ -1,4 +1,4 @@
-﻿using FluentEmail.Core;
+using FluentEmail.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -70,7 +70,7 @@ namespace tupadportal.Controllers
                     var userRoles = await _userManager.GetRolesAsync(user);
                     if (userRoles.Contains("brgy"))
                     {
-                        string loginUrl = "https://localhost:7231/Identity/Account/Login"; // Adjust your login URL here
+                        string loginUrl = "https://tupadportal-fyh7axa6g0gtd8fg.canadacentral-01.azurewebsites.net/Identity/Account/Login"; // Adjust your login URL here
 
                         await _fluentEmail
                             .To(user.Email)
@@ -116,7 +116,7 @@ namespace tupadportal.Controllers
                 if (userRoles.Contains("brgy"))
                 {
                     // Construct the login URL
-                    string loginUrl = "https://localhost:7231/Identity/Account/Login"; // Replace with your actual login page URL
+                    string loginUrl = "https://tupadportal-fyh7axa6g0gtd8fg.canadacentral-01.azurewebsites.net/Identity/Account/Login"; // Replace with your actual login page URL
 
                     // Send email notification to the user with a link to the login page
                     await _fluentEmail
