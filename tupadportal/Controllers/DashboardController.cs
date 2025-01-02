@@ -8,6 +8,7 @@ using tupadportal.ViewModels;
 
 namespace tupadportal.Controllers
 {
+    [Authorize(Roles = "admin")]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
