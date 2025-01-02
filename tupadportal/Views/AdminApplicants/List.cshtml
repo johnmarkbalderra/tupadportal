@@ -40,9 +40,9 @@
                 <thead class="table-secondary">
                     <tr>
                         <th>No.</th>
+                        <th>Last Name</th>
                         <th>First Name</th>
                         <th>Middle Name</th>
-                        <th>Last Name</th>
                         <th>Extension Name</th>
                         <th>Birthdate</th>
                         <th>Barangay</th>
@@ -63,14 +63,13 @@
                     }
                     @if (Model != null && Model.Any())
                     {
-
-                        foreach (var applicant in Model)
+                        foreach (var applicant in Model.OrderBy(a => a.LastName)) // Sort by LastName
                         {
                             <tr data-barangay="@applicant.Address?.Barangay" data-batch="@applicant.Batch?.BatchName">
                                 <td>@counter</td>
+                                <td>@applicant.LastName</td>
                                 <td>@applicant.FirstName</td>
                                 <td>@applicant.MiddleName</td>
-                                <td>@applicant.LastName</td>
                                 <td>@(string.IsNullOrWhiteSpace(applicant.ExtensionName) ? "N/A" : applicant.ExtensionName)</td>
                                 <td>@applicant.Birthdate.ToShortDateString()</td>
                                 <td>@applicant.Address?.Barangay</td>
@@ -94,6 +93,7 @@
                         </tr>
                     }
                 </tbody>
+
             </table>
         </div>
     </div>
